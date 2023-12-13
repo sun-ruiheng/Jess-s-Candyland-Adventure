@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<meta http-equiv="Access-Control-Allow-Origin" content="*" />
+
+
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
+</head>
+<body>
+
+    <script>
+    let gameState = {};
+
+    function preload() {
+    // load in background and characters
+    this.load.image(
+        "bg",
+        "https://content.codecademy.com/projects/learn-phaser/cyoa/background.png"
+    );
+    this.load.image(
+        "umbrellaroll",
+        "img/umbrellaroll.png"
+    );
+    this.load.image(
+        "catroll",
+        "img/catroll.png"
+    );
+    this.load.image( 
+        "thinkroll",
+        "img/thinkroll.png"
+    );
+    this.load.image(
+        "sadroll",
+        "img/sadroll.webp"
+    );
+    this.load.image(
+        "tetris",
+        "img/tetris.png"
+    );
+    this.load.image(
+        "triviaroll",
+        "img/triviaroll.png"
+    );
+    this.load.image(
+        "strawroll",
+        "img/strawroll.webp"
+    );
+    this.load.image(
+        "bdayroll",
+        "img/bdayroll.png"
+    );
+    this.load.image(
+        "empty",
+        "img/empty.png"
+    );
+    this.load.image(
+        "goblin",
+        "img/goblin.png"
+    );
+    this.load.image(
+        "chillroll",
+        "img/chillroll.webp"
+    );
+    this.load.image(
+        "glockroll",
+        "img/glockroll.webp"
+    );
+    this.load.image(
+        "adventureroll",
+        "img/adventureroll.png"
+    );
+    this.load.image(
+        "wolf1",
+        "img/snoweyback.jpeg"
+    );
+    this.load.image(
+        "wolf2",
+        "img/snowyside.jpeg"
+    );
+    this.load.image(
+        "wolf3",
+        "img/snowywolf.jpeg"
+    );
+    this.load.image(
+        "bunny",
+        "img/bunny.jpeg"
+    );
+    }
+
+    function create() {
+        gameState.background = this.add.image(0, 0, "bg");
+        gameState.background.setOrigin(0, 0);
+        renderCharacter(this, "umbrellaroll");
+
+        initializePage(this);
+        const firstPage = fetchPage(1);
+        displayPage(this, firstPage);
+    }
+
+    function renderCharacter(scene, key) {
+        if (gameState.character) {
+            gameState.character.destroy();
+        }
+        gameState.character = scene.add.image(270, 340, key);
+        gameState.character.setOrigin(0.5, 1);
+        gameState.character.setScale(0.5);
+    }
+
+    function initializePage(scene) {
+        // create options list and background
+        // and saves them into gameState
+
+        if (!gameState.options) {
+            // create options list
+            // if it doesn't exist
+            gameState.options = [];
+        }
+
+        if (!gameState.narrative_background) {
+            // create narrative background
+            // if it doesn't exist
+            gameState.narrative_background = scene.add.rectangle(
+                10,
+                360,
+                430,
+                170,
+                0x000
+            );
+            gameState.narrative_background.setOrigin(0, 0);
+        }
+    }
+
+    function destroyPage() {
+        // wipe out narrative text and options
+
+        if (gameState.narrative) {
+            // destroy narrative if it exists
+            gameState.narrative.destroy();
+        }
+
+        for (let option of gameState.options) {
+            // destroy options if they exist
+            option.optionBox.destroy();
+            option.optionText.destroy();
+        }
+    }
+
+    function displayPage(scene, page) {
+        const narrativeStyle = {
+            fill: "#ffffff",
+            fontStyle: "italic",
+            align: "center",
+            wordWrap: { width: 340 },
+            lineSpacing: 8,
+        };
+
+        // display general page character
+        // & narrative here:
+        renderCharacter(scene, page.character);
+        gameState.narrative = scene.add.text(65, 380, page.narrative, narrativeStyle);
+
+        // for-loop creates different options
+        // need the index i for spacing the boxes
+        for (let i = 0; i < page.options.length; i++) {
+            let option = page.options[i];
+
+            // color in the option box
+            const optionBox = scene.add.rectangle(
+                40 + i * 130,
+                470,
+                110,
+                40,
+                0xb39c0e,
+                0
+            );
+            optionBox.strokeColor = 0xb39c0e;
+            optionBox.strokeWeight = 2;
+            optionBox.strokeAlpha = 1;
+            optionBox.isStroked = true;
+            optionBox.setOrigin(0, 0);
+
+            // add in the option text
+            const baseX = 40 + i * 130;
+            const optionText = scene.add.text(baseX, 480, option.option, {
+                fontSize: 14,
+                fill: "#b39c0e",
+                align: "center",
+                wordWrap: { width: 110 },
+            });
+            const optionTextBounds = optionText.getBounds();
+
+            // centering each option text
+            optionText.setX(optionTextBounds.x + 55 - optionTextBounds.width / 2);
+            optionText.setY(optionTextBounds.y + 10 - optionTextBounds.height / 2);
+
+            // add in gameplay functionality
+            // for options here
+            optionBox.setInteractive();
+            optionBox.on(
+                "pointerup",
+                function () {
+                    const newPage = this.option.nextPage;
+                    if (newPage !== undefined) {
+                        destroyPage();
+                        displayPage(scene, fetchPage(newPage));
+                    }
+                },
+                { option }
+            );
+            optionBox.on(
+                "pointerover",
+                function () {
+                    this.optionBox.setStrokeStyle(2, 0xffe014, 1);
+                    this.optionText.setColor("#ffe014");
+                },
+                { optionBox, optionText }
+            );
+            optionBox.on(
+                "pointerout",
+                function () {
+                    this.optionBox.setStrokeStyle(1, 0xb38c03, 1);
+                    this.optionText.setColor("#b39c0e");
+                },
+                { optionBox, optionText }
+            );
+            gameState.options.push({
+                optionBox,
+                optionText
+            });
+        }
+    }
+
+    const config = {
+        type: Phaser.WEBGL,
+        parent: "phaser-game",
+        backgroundColor: 0xfea0fd,
+        width: 450,
+        height: 550,
+        scene: {
+            preload,
+            create,
+        },
+    };
+
+    const game = new Phaser.Game(config);
+
+    function fetchPage(page) {
+        const pages = [
+            {
+            character: "umbrellaroll",
+            page: 1,
+            narrative: "Cinnamoroll: Hello there, adventurer! =3",
+            options: [
+                { option: "Say Hi", nextPage: 2 },
+                { option: "Ignore", nextPage: 41 },
+            ],
+            },
+
+            {
+            character: "thinkroll",
+            page: 41,
+            narrative: "Cinnamoroll: Uhm. Excuse me?!",
+            options: [
+                { option: "Say Hi", nextPage: 2 },
+                { option: "Continue Ignoring", nextPage: 42 },
+            ],
+            },
+
+            {
+            character: "sadroll",
+            page: 42,
+            narrative: "Cinnamoroll: :(",
+            options: [
+                { option: "Ok fine, hi", nextPage: 2 }
+            ],
+            },
+
+            {
+            character: "umbrellaroll",
+            page: 2,
+            narrative:
+                "Cinnamoroll: Hello! What's your name?",
+            options: [
+                { option: "Moo Moo Cats.", nextPage: 3 }
+            ],
+            },
+
+            {
+            character: "catroll",
+            page: 3,
+            narrative:
+                "Cinnamoroll: Wow! Meow to you, too ~",
+            options: [
+                { option: "Stop being so silly", nextPage: 4 },
+                { option: "Hee hee!", nextPage: 5 }
+            ],
+            },
+
+            {
+            character: "sadroll",
+            page: 4,
+            narrative:
+                "Cinnamoroll: Aw man... okay",
+            options: [
+                { option: "k", nextPage: 5 },
+            ],
+            },
+
+            {
+            character: "umbrellaroll",
+            page: 5,
+            narrative:
+                "Cinnamoroll: Anyway, I'd like to play a game of trivia with you!",
+            options: [
+                { option: "I'd rather play tetris", nextPage: 6 },
+                { option: "Okay, FUN!", nextPage: 7 },
+            ],
+            },
+
+            {
+            character: "tetris",
+            page: 6,
+            narrative:
+                "Cinnamoroll: There's no point, because I'm already the best. Look at my highscore!",
+            options: [
+                { option: "Oops, ok fine", nextPage: 7 },
+            ],
+            },
+
+            {
+            character: "triviaroll",
+            page: 7,
+            narrative:
+                "Cinnamoroll: First question: What species am I?",
+            options: [
+                { option: "Bunny, obviously.", nextPage: 8 },
+                { option: "Actually, puppy!", nextPage: 9 },
+                { option: "Hmm, sheep?", nextPage: 8 },
+            ],
+            },
+
+            {
+            character: "thinkroll",
+            page: 8,
+            narrative:
+                "Cinnamoroll: That's not quite right.",
+            options: [
+                { option: "Try again", nextPage: 7 },
+            ],
+            },
+
+            {
+            character: "strawroll",
+            page: 9,
+            narrative:
+                "Cinnamoroll: BINGO! I am a puppy. You're so smart, Moo Moo Cats!",
+            options: [
+                { option: "Woof woof!", nextPage: 10 },
+            ],
+            },
+
+            {
+            character: "triviaroll",
+            page: 10,
+            narrative:
+                "Cinnamoroll: Next question: Which champion can truly revive another champion?",
+            options: [
+                { option: "Zilean.", nextPage: 12 },
+                { option: "Xin Zhao.", nextPage: 11 },
+                { option: "Orianna.", nextPage: 11 },
+            ],
+            },
+
+            {
+            character: "thinkroll",
+            page: 11,
+            narrative:
+                "Cinnamoroll: I feel like you're trolling trolling all...",
+            options: [
+                { option: "Try again", nextPage: 10 },
+            ],
+            },
+
+            {
+            character: "strawroll",
+            page: 12,
+            narrative:
+                "Cinnamoroll: Ding Ding! Correct, clever moomoocats!",
+            options: [
+                { option: "I am a League addict", nextPage: 13 },
+                { option: "That was trivial", nextPage: 14 },
+            ],
+            },
+
+            {
+            character: "umbrellaroll",
+            page: 13,
+            narrative:
+                "Cinnamoroll: That's okay, enjoy yourself over winter!",
+            options: [
+                { option: "OK!", nextPage: 15 },
+            ],
+            },
+
+            {
+            character: "sadroll",
+            page: 14,
+            narrative:
+                "Cinnamoroll: I'm trying my best :(",
+            options: [
+                { option: "ok sorry", nextPage: 15 },
+                { option: "Do better bruh", nextPage: 15 },
+            ],
+            },
+
+            {
+            character: "triviaroll",
+            page: 15,
+            narrative:
+                "Cinnamoroll: Last question: When is moo moo cat's birthday?",
+            options: [
+                { option: "13th December!", nextPage: 16 },
+                { option: "13/12/2003!", nextPage: 16 },
+                { option: "TODAY!", nextPage: 16 },
+            ],
+            },
+
+            {
+            character: "bdayroll",
+            page: 16,
+            narrative:
+                "Cinnamoroll: HAPPY BIRTHDAY MOO MOO CATS!!!",
+            options: [
+                { option: "YAY!", nextPage: 17 },
+            ],
+            },
+
+            {
+            character: "empty",
+            page: 17,
+            narrative:
+                "???: Not so fast.",
+            options: [
+                { option: "...Who's that?", nextPage: 18 },
+            ],
+            },
+
+            {
+            character: "goblin",
+            page: 18,
+            narrative:
+                "GaruGobblin: It is me, the Garu Gobblin. I'm here to spoil your birthday!",
+            options: [
+                { option: "I am rather fearful", nextPage: 19 },
+                { option: "Ahhh! Help!", nextPage: 19 },
+            ],
+            },
+
+            {
+            character: "chillroll",
+            page: 19,
+            narrative:
+                "Cinnamoroll: Don't worry, Moo Moo Cats!",
+            options: [
+                { option: "Oh?", nextPage: 20 },
+            ],
+            },
+
+            {
+            character: "adventureroll",
+            page: 20,
+            narrative:
+                "Cinnamoroll: Let me go summon some friends for backup.",
+            options: [
+                { option: "Okay Cinnamoroll!", nextPage: 21 },
+            ],
+            },
+
+            {
+            character: "adventureroll",
+            page: 20,
+            narrative:
+                "Cinnamoroll: Let me go summon some friends for backup.",
+            options: [
+                { option: "Okay Cinnamoroll!", nextPage: 21 },
+            ],
+            },
+
+            {
+            character: "wolf1",
+            page: 21,
+            narrative:
+                "Who's that?",
+            options: [
+                { option: "ooh...", nextPage: 22 },
+            ],
+            },
+            {
+            character: "wolf2",
+            page: 22,
+            narrative:
+                "Could it be??",
+            options: [
+                { option: "I know who it is!", nextPage: 23 },
+            ],
+            },
+            {
+            character: "wolf3",
+            page: 23,
+            narrative:
+                "IT'S SNOWY WOLF!",
+            options: [
+                { option: "Hi Snowy Wolf!", nextPage: 24 },
+                { option: "Are you here to help?", nextPage: 25 },
+            ],
+            },
+            {
+            character: "wolf3",
+            page: 24,
+            narrative:
+                "Snowy Wolf: Hello Moo Moo Cats and Cinnamoroll!",
+            options: [
+                { option: "Help us fight the GaruGobblin!", nextPage: 25 },
+            ],
+            },
+            {
+            character: "wolf3",
+            page: 25,
+            narrative:
+                "Snowy Wolf: Of course! I brought a friend too!",
+            options: [
+                { option: "Let's have a look.", nextPage: 26 },
+            ],
+            },
+
+            {
+            character: "bunny",
+            page: 26,
+            narrative:
+                "Bunny: HEY MY PALS!",
+            options: [
+                { option: "Hi Bunny!!!", nextPage: 27 },
+            ],
+            },
+
+            {
+            character: "goblin",
+            page: 27,
+            narrative:
+                "GaruGobblin: Nice try, but you're still too weak to defeat me!",
+            options: [
+                { option: "Do something, Cinnamoroll!", nextPage: 28 },
+            ],
+            },
+
+            {
+            character: "chillroll",
+            page: 28,
+            narrative:
+                "Cinnamoroll: Gobblin, you have left me with no choice.",
+            options: [
+                { option: "Wait what", nextPage: 29 },
+                { option: "Whip out da Glock!", nextPage: 29 },
+            ],
+            },
+
+            {
+            character: "glockroll",
+            page: 29,
+            narrative:
+                "",
+            options: [
+                { option: "LOL", nextPage: 30 },
+            ],
+            },
+
+            {
+            character: "goblin",
+            page: 30,
+            narrative:
+                "GaruGobblin: AHH okay I surrender!!!",
+            options: [
+                { option: "Scram, stupid gobblin!", nextPage: 31 },
+            ],
+            },
+
+            {
+            character: "bdayroll",
+            page: 31,
+            narrative:
+                "Cinnamoroll: Yay, let's have a cake and celebrate Moo Moo Cat's birthday!",
+            options: [
+                { option: "Okay!", nextPage: 32 },
+            ],
+            },
+
+            {
+            character: "empty",
+            page: 32,
+            narrative:
+                "THE END. HAPPY BIRTHDAY JESS! I LOVE YOU!",
+            options: [
+                { option: "Binjang Boonjang Cat!", nextPage: 1 },
+                { option: "Pee pee poo poo Cat!", nextPage: 1 },
+            ],
+            },
+
+        ];
+
+        return pages.find(function (e) {
+            if (e.page == page) return e;
+        });
+    }
+
+    </script>
+
+</body>
+</html>
